@@ -1,0 +1,11 @@
+order_id,customer_id,name,status,order_date,delivery_date,refund_status,refund_amount,product,amount
+ORD1001,C1001,Rahul Kumar,Delivered,2026-08-15,2026-08-25,Pending,25000,Laptop Pro X1,75000
+ORD1002,C1002,Priya Sharma,Shipped,2026-08-22,2026-08-30,None,0,Wireless Headphones,4500
+ORD1003,C1003,Amit Patel,Delivered,2026-08-10,2026-08-20,Completed,3200,Running Shoes,3200
+ORD1004,C1004,Sneha Reddy,Processing,2026-08-28,2026-09-05,None,0,Smart Watch,12000
+ORD1005,C1005,Vikram Singh,Cancelled,2026-08-20,None,Pending,8500,Tablet Mini,8500
+ORD1006,C1006,Ananya Das,Delivered,2026-08-12,2026-08-18,None,0,Coffee Maker,2800
+ORD1007,C1007,Rohan Mehta,Shipped,2026-08-25,2026-09-01,None,0,Gaming Controller,3500
+ORD1008,C1008,Kavya Nair,Delivered,2026-08-08,2026-08-14,Completed,1500,Earbuds,1500
+ORD1009,C1009,Arjun Kumar,Processing,2026-08-29,2026-09-10,None,0,Air Purifier,15000
+ORD1010,C1010,Meera Iyer,Delivered,2026-08-05,2026-08-11,Pending,6000,Blender Pro,6000
