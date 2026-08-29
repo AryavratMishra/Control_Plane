@@ -198,18 +198,17 @@ async def evaluate(
     )
 
     # ── Phase 6: Broadcast WebSocket event ───────────────────────────────
-    if risk_decision.action != "ALLOW":
-        await ws_manager.send_risk_event(
-            incident_id=incident_id,
-            application=req.application_id,
-            action=risk_decision.action,
-            severity=risk_decision.overall_level,
-            reasons=risk_decision.reasons[:3],
-            performance_score=risk_decision.performance_score,
-            cost_score=risk_decision.cost_score,
-            responsibility_score=risk_decision.responsibility_score,
-            overall_score=risk_decision.overall_score,
-        )
+    await ws_manager.send_risk_event(
+        incident_id=incident_id,
+        application=req.application_id,
+        action=risk_decision.action,
+        severity=risk_decision.overall_level,
+        reasons=risk_decision.reasons[:3],
+        performance_score=risk_decision.performance_score,
+        cost_score=risk_decision.cost_score,
+        responsibility_score=risk_decision.responsibility_score,
+        overall_score=risk_decision.overall_score,
+    )
 
     # ── Build response ────────────────────────────────────────────────────
     def _score_level(score: float) -> str:

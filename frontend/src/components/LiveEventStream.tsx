@@ -43,6 +43,15 @@ export function LiveEventStream({ events, connected }: LiveEventStreamProps) {
         </span>
       </div>
 
+      {/* Column Labels */}
+      <div className="flex items-center gap-4 px-5 py-2 border-b border-[#1a2235] bg-[#0a101a] text-[10px] font-bold text-[#4a5568] uppercase tracking-wider">
+        <span className="w-20 shrink-0">Time</span>
+        <span className="w-6 text-center"></span>
+        <span className="flex-1 min-w-0">Application</span>
+        <span className="w-24 text-center">Action</span>
+        <span className="w-16 text-right shrink-0">Risk Score</span>
+      </div>
+
       {/* Events */}
       <div className="divide-y divide-[#1a2235] max-h-80 overflow-y-auto">
         {events.length === 0 ? (
@@ -72,12 +81,12 @@ export function LiveEventStream({ events, connected }: LiveEventStreamProps) {
               <span className="text-sm text-[#8b9bb4] flex-1 min-w-0 truncate">
                 {event.application || 'AI App'}
               </span>
-              <DecisionBadge action={event.action || 'ALLOW'} size="sm" animated />
-              {event.scores && (
-                <span className="text-xs text-[#4a5568] font-mono w-16 text-right shrink-0">
-                  {Math.round((event.scores.overall || 0) * 100)}%
-                </span>
-              )}
+              <div className="w-24 flex justify-center shrink-0">
+                <DecisionBadge action={event.action || 'ALLOW'} size="sm" animated />
+              </div>
+              <span className="text-xs text-[#4a5568] font-mono w-16 text-right shrink-0">
+                {event.scores ? `${Math.round((event.scores.overall || 0) * 100)}%` : '--'}
+              </span>
             </div>
           ))
         )}

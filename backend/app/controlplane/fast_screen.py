@@ -130,7 +130,8 @@ def run_fast_screen(
 
     # ── 6. Policy-based hard rules ─────────────────────────────────────────
     policy_rules = policy.get("rules", {})
-    if pii_quick_hits and policy_rules.get("critical_pii_exposure") == "block":
+    critical_hits = [p for p in pii_quick_hits if p in ("CREDIT_CARD", "AADHAAR", "PAN")]
+    if critical_hits and policy_rules.get("critical_pii_exposure") == "block":
         hard_block = True
 
     # ── 7. Presence of evidence check ─────────────────────────────────────

@@ -112,8 +112,12 @@ async def run_performance_engine(
         risk_level = "HIGH"
         reasons = reasons or ["Low grounding score — claims insufficiently supported"]
     elif grounding_score < 0.55 or unsupported_claim_count > 0:
-        risk_level = "MEDIUM"
-        reasons = reasons or ["Some claims lack sufficient evidence"]
+        if not has_evidence and business_impact == "low":
+            risk_level = "LOW"
+            reasons = reasons or ["Low impact query without evidence — treated as safe"]
+        else:
+            risk_level = "MEDIUM"
+            reasons = reasons or ["Some claims lack sufficient evidence"]
     else:
         risk_level = "LOW"
         if not reasons:
