@@ -23,9 +23,11 @@ export function Layout({ children }: LayoutProps) {
         {/* Logo */}
         <div className="px-6 py-5 border-b border-[#1e2d45]">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center text-white text-sm font-bold">
-              CP
-            </div>
+            <img 
+              src="/logo.svg" 
+              alt="Logo" 
+              className="w-8 h-8 invert opacity-90 drop-shadow-md" 
+            />
             <div>
               <div className="text-sm font-bold text-[#e8edf5]">ControlPlane<span className="text-blue-400">.ai</span></div>
               <div className="text-xs text-[#4a5568]">AI Governance Layer</div>
@@ -60,9 +62,9 @@ export function Layout({ children }: LayoutProps) {
         <div className="px-4 py-4 border-t border-[#1e2d45]">
           <div className="flex items-center gap-2 px-2">
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-xs text-[#4a5568]">System Operational</span>
+            <span className="text-xs text-[#4a5568]"></span>
           </div>
-          <p className="text-xs text-[#4a5568] mt-2 px-2">Round 2 Prototype</p>
+          <p className="text-xs text-[#4a5568] mt-2 px-2"></p>
         </div>
       </aside>
 
