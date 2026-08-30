@@ -24,6 +24,7 @@ class PerformanceResult:
     confidence: float = 0.5
     reasons: list[str] = field(default_factory=list)
     evidence: list[dict] = field(default_factory=list)
+    raw_score: float = 0.5  # continuous 0.0–1.0 risk score
 
 
 @dataclass
@@ -37,6 +38,7 @@ class CostResult:
     retries: int = 0
     latency_ms: int = 0
     reasons: list[str] = field(default_factory=list)
+    raw_score: float = 0.02  # continuous 0.0–1.0 risk score
 
 
 @dataclass
@@ -67,6 +69,7 @@ class ResponsibilityResult:
     bias_signal: Optional[str] = None
     confidence: float = 0.5
     reasons: list[str] = field(default_factory=list)
+    raw_score: float = 0.01  # continuous 0.0–1.0 risk score
 
 
 @dataclass

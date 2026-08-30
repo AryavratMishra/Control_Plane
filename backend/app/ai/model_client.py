@@ -128,6 +128,66 @@ class ModelClient:
             logger.warning(f"LLM call failed ({provider}): {e}")
             return None
 
+    async def generate_response(
+        self,
+        system_prompt: str,
+        user_message: str,
+        temperature: float = 0.7,
+        max_tokens: int = 400,
+    ) -> str | None:
+        """
+        Generate a plain-text AI response (used to produce live demo responses).
+        Unlike complete(), this does NOT require enable_llm_judge=True â€”
+        it is used to simulate the downstream AI agent, not the judge.
+        Returns the raw text string, or None on failure.
+        """
+        if not settings.llm_api_key:
+            return None
+
+        provider = settings.llm_provider.lower()
+
+        try:
+            client = self._get_client(provider)
+
+            if provider == "openai":
+                response = client.chat.completions.create(
+                    model=settings.llm_model,
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_message},
+                    ],
+                    temperature=temperature,
+                    max_tokens=max_tokens,
+                )
+                return response.choices[0].message.content.strip()
+
+            elif provider == "gemini":
+                from google.genai import types
+                config = types.GenerateContentConfig(
+                    system_instruction=system_prompt,
+                    temperature=temperature,
+                    max_output_tokens=max_tokens,
+                )
+                response = client.models.generate_content(
+                    model=settings.llm_model,
+                    contents=user_message,
+                    config=config,
+                )
+                return response.text.strip()
+
+            elif provider == "anthropic":
+                response = client.messages.create(
+                    model=settings.llm_model,
+                    max_tokens=max_tokens,
+                    system=system_prompt,
+                    messages=[{"role": "user", "content": user_message}],
+                )
+                return response.content[0].text.strip()
+
+        except Exception as e:
+            logger.warning(f"generate_response failed ({provider}): {e}")
+            return None
+
     async def get_embedding(self, text: str) -> Optional[list[float]]:
         """Get embedding vector for text."""
         if not settings.llm_api_key:
@@ -167,3 +227,4 @@ def get_model_client() -> ModelClient:
     if _client is None:
         _client = ModelClient()
     return _client
+

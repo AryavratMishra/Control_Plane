@@ -30,7 +30,7 @@ export function Layout({ children }: LayoutProps) {
             />
             <div>
               <div className="text-sm font-bold text-[#e8edf5]">ControlPlane<span className="text-blue-400">.ai</span></div>
-              <div className="text-xs text-[#4a5568]">AI Governance Layer</div>
+              <div className="text-xs text-[#4a5568]">AI firewall</div>
             </div>
           </div>
         </div>
