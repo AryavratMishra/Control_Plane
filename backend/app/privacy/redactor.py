@@ -13,7 +13,7 @@ def redact_pii(text: str, entities: list[PiiEntity]) -> str:
 
     result = list(text)
     for entity in sorted(entities, key=lambda e: e.start, reverse=True):
-        placeholder = f"[REDACTED:{entity.entity_type}]"
+        placeholder = "X" * len(entity.text)
         result[entity.start:entity.end] = list(placeholder)
 
     return "".join(result)
