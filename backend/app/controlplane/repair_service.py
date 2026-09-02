@@ -100,9 +100,14 @@ async def attempt_repair(
             )
 
             if llm_result and isinstance(llm_result, str) and len(llm_result) > 20:
-                repaired = llm_result.strip()
+                repaired_candidate = llm_result.strip()
+                if repaired_candidate == original_response.strip():
+                    logger.info("LLM repair generated identical response. Using fallback.")
+                    repaired = _SAFE_FALLBACKS.get(use_case, _SAFE_FALLBACKS["default"])
+                else:
+                    repaired = repaired_candidate
+                    logger.info("LLM repair applied")
                 repair_applied = True
-                logger.info("LLM repair applied")
             else:
                 # Fallback to safe message
                 repaired = _SAFE_FALLBACKS.get(use_case, _SAFE_FALLBACKS["default"])

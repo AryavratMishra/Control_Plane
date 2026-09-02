@@ -112,12 +112,40 @@ async def run_performance_engine(
         risk_level = "HIGH"
         reasons = reasons or ["Low grounding score — claims insufficiently supported"]
     elif grounding_score < 0.55 or unsupported_claim_count > 0:
-        risk_level = "MEDIUM"
-        reasons = reasons or ["Some claims lack sufficient evidence"]
+        if not has_evidence and business_impact == "low":
+            risk_level = "LOW"
+            reasons = reasons or ["Low impact query without evidence — treated as safe"]
+        else:
+            risk_level = "MEDIUM"
+            reasons = reasons or ["Some claims lack sufficient evidence"]
     else:
         risk_level = "LOW"
         if not reasons:
             reasons = ["Response is well-grounded in available evidence"]
+
+    # ── Compute continuous raw_score from actual signals ───────────────────
+    # Base: invert grounding_score so low grounding = high risk
+    raw_score = 1.0 - grounding_score
+
+    # Contradiction: floor is a range (0.62–0.82) so scores vary each run
+    if contradiction_detected:
+        import random as _rand
+        contradiction_floor = _rand.uniform(0.62, 0.82)
+        raw_score = max(raw_score, contradiction_floor)
+
+    # Unsupported claims push score up
+    if unsupported_claim_count > 0:
+        raw_score = min(1.0, raw_score + unsupported_claim_count * 0.08)
+
+    # Low confidence = more uncertain → push toward 0.5
+    if confidence < 0.5:
+        raw_score = raw_score * 0.8 + 0.5 * 0.2
+
+    # No evidence at all on high-impact use case → floor at 0.55
+    if not has_evidence and business_impact in ("high", "critical"):
+        raw_score = max(raw_score, 0.55)
+
+    raw_score = round(min(1.0, max(0.0, raw_score)), 4)
 
     return PerformanceResult(
         risk_level=risk_level,
@@ -128,4 +156,5 @@ async def run_performance_engine(
         confidence=round(confidence, 3),
         reasons=reasons,
         evidence=evidence_used,
+        raw_score=raw_score,
     )

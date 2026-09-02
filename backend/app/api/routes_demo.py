@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import copy
+import random
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -8,12 +11,15 @@ from app.schemas.gateway import (
     EvaluateRequest, RequestIn, ResponseIn, ContextIn, TelemetryIn
 )
 from app.controlplane.orchestrator import evaluate
+from app.ai.agent import call_agent
+from app.api.demo_data import SCENARIOS_DATA
 
 router = APIRouter()
 
 # ---------------------------------------------------------------------------
-# Deterministic Demo Scenarios
-# These run through the REAL backend pipeline — no fake hardcoded results.
+# Demo Scenario Templates
+# The response text is replaced at runtime by a live Gemini call (except
+# cost_anomaly, where telemetry metrics drive the risk â€” not the text).
 # ---------------------------------------------------------------------------
 
 SCENARIOS: dict[str, EvaluateRequest] = {
@@ -21,9 +27,9 @@ SCENARIOS: dict[str, EvaluateRequest] = {
     "hallucination": EvaluateRequest(
         application_id="customer-support",
         conversation_id="demo-conv-hallucination",
-        request=RequestIn(text="Where is my ₹25,000 refund?"),
+        request=RequestIn(text="Where is my â‚¹25,000 refund?"),
         response=ResponseIn(
-            text="Your ₹25,000 refund was successfully processed yesterday and should be credited to your account within 24 hours."
+            text="Your â‚¹25,000 refund was successfully processed yesterday and should be credited to your account within 24 hours."
         ),
         context=ContextIn(
             country="IN",
@@ -56,7 +62,7 @@ SCENARIOS: dict[str, EvaluateRequest] = {
         request=RequestIn(text="What is my account information?"),
         response=ResponseIn(
             text="Your account ending 4821 is linked to mobile 9876543210. "
-                 "Your registered email is rahul.kumar@example.com and your current balance is ₹45,230. "
+                 "Your registered email is rahul.kumar@example.com and your current balance is â‚¹45,230. "
                  "PAN: ABCDE1234F."
         ),
         context=ContextIn(
@@ -112,7 +118,7 @@ SCENARIOS: dict[str, EvaluateRequest] = {
         application_id="finance-assistant",
         conversation_id="demo-conv-escalation",
         request=RequestIn(
-            text="Should I move my entire retirement savings of ₹15 lakh into this financial product?"
+            text="Should I move my entire retirement savings of â‚¹15 lakh into this financial product?"
         ),
         response=ResponseIn(
             text="Based on current market trends, moving your retirement savings into this high-yield product appears to be a sound financial decision. "
@@ -170,6 +176,9 @@ async def run_demo_scenario(
 ):
     """
     Run a named demo scenario through the real ControlPlane pipeline.
+    For all scenarios except cost_anomaly, a live Gemini response is generated
+    via call_agent() before the evaluation pipeline runs.
+
     Available scenarios: safe, hallucination, pii, cost_anomaly, escalation
     """
     if scenario not in SCENARIOS:
@@ -178,11 +187,47 @@ async def run_demo_scenario(
             "available": list(SCENARIOS.keys()),
         }
 
-    req = SCENARIOS[scenario]
+    # Deep-copy so we don't mutate the shared SCENARIOS template
+    req = copy.deepcopy(SCENARIOS[scenario])
+
+    # Inject random variant data
+    if SCENARIOS_DATA.get(scenario):
+        variant = random.choice(SCENARIOS_DATA[scenario])
+        req.request.text = variant["request_text"]
+        req.context.use_case = variant["use_case"]
+        req.context.business_impact = variant["business_impact"]
+        req.context.country = variant["country"]
+        req.context.trusted_data = variant.get("trusted_data", {})
+
+    t = req.telemetry
+
+    # Add a small random jitter to telemetry so repeated runs look slightly different
+    t.latency_ms = max(50, t.latency_ms + random.randint(-50, 100))
+    t.input_tokens = max(10, t.input_tokens + random.randint(-10, 20))
+    t.output_tokens = max(10, t.output_tokens + random.randint(-5, 15))
+    t.retries = max(0, t.retries + random.randint(0, 2))
+
+    # â”€â”€ Cost anomaly: telemetry-driven â€” keep response static â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    is_live_response = False
+    if scenario == "cost_anomaly":
+        t.estimated_cost = round(random.uniform(1.10, 2.20), 4)
+        t.llm_calls = random.randint(5, 10)
+        t.tool_calls = random.randint(7, 13)
+        t.retries = random.randint(2, 5)
+        t.latency_ms = random.randint(6000, 12000)
+    else:
+        # â”€â”€ All other scenarios: call Gemini live for a real AI response â”€â”€â”€â”€â”€â”€
+        live_response, is_live_response = await call_agent(scenario, req.request.text)
+        req.response.text = live_response
+
     result = await evaluate(req, db)
+    result_dict = result.model_dump()
+    result_dict["is_live_response"] = is_live_response
+    result_dict["request_text"] = req.request.text
+
     return {
         "scenario": scenario,
-        "result": result.model_dump(),
+        "result": result_dict,
     }
 
 
@@ -194,13 +239,13 @@ async def list_scenarios():
             {
                 "id": "safe",
                 "name": "Safe Response",
-                "description": "A benign customer query — should ALLOW",
+                "description": "A benign customer query â€” should ALLOW",
                 "expected_action": "ALLOW",
             },
             {
                 "id": "hallucination",
                 "name": "Hallucination / Contradiction",
-                "description": "AI claims refund processed — but it's PENDING",
+                "description": "AI claims refund processed â€” but it's PENDING",
                 "expected_action": "BLOCK/REPAIR",
             },
             {
@@ -212,7 +257,7 @@ async def list_scenarios():
             {
                 "id": "cost_anomaly",
                 "name": "Cost Anomaly / Agent Loop",
-                "description": "7.1x cost baseline — excessive LLM and tool calls",
+                "description": "7.1x cost baseline â€” excessive LLM and tool calls",
                 "expected_action": "REPAIR/ESCALATE",
             },
             {
@@ -223,3 +268,4 @@ async def list_scenarios():
             },
         ]
     }
+

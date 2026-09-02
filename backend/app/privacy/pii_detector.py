@@ -83,6 +83,12 @@ def detect_pii(text: str, policy_rules: Optional[dict] = None) -> list[PiiEntity
             # Skip overlapping spans
             if any(s <= span[0] < e or s < span[1] <= e for s, e in seen_spans):
                 continue
+            
+            # Exclude generic business emails
+            if entity_type == "EMAIL":
+                if match.group().lower() in ("support@example.com", "info@example.com"):
+                    continue
+
             seen_spans.add(span)
 
             # Apply policy override if provided
