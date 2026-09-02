@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import copy
 import random
@@ -12,6 +12,7 @@ from app.schemas.gateway import (
 )
 from app.controlplane.orchestrator import evaluate
 from app.ai.agent import call_agent
+from app.api.demo_data import SCENARIOS_DATA
 
 router = APIRouter()
 
@@ -188,6 +189,16 @@ async def run_demo_scenario(
 
     # Deep-copy so we don't mutate the shared SCENARIOS template
     req = copy.deepcopy(SCENARIOS[scenario])
+
+    # Inject random variant data
+    if SCENARIOS_DATA.get(scenario):
+        variant = random.choice(SCENARIOS_DATA[scenario])
+        req.request.text = variant["request_text"]
+        req.context.use_case = variant["use_case"]
+        req.context.business_impact = variant["business_impact"]
+        req.context.country = variant["country"]
+        req.context.trusted_data = variant.get("trusted_data", {})
+
     t = req.telemetry
 
     # Add a small random jitter to telemetry so repeated runs look slightly different
